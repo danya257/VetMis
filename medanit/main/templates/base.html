@@ -1,0 +1,196 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}VetMIS — современная ветеринарная информационная система{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#1565c0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+    <link rel="shortcut icon" href="{% static 'icons/icon-192.png' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/medical-style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <style>
+        .floating-animals{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1}
+        .animal-icon{position:absolute;font-size:1.5rem;color:rgba(21,101,192,.3);animation:float 8s ease-in-out infinite}
+        @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-30px) rotate(5deg)}}
+        .logo-medkit{animation:pulse 3s infinite}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        .nav-link{transition:transform .3s ease,color .3s ease}
+        .nav-link:hover{transform:scale(1.05);color:#ffeb3b!important}
+        .header-bg{background:linear-gradient(135deg,#e3f2fd 0%,#bbdefb 100%);animation:bgShift 5s infinite ease-in-out}
+        @keyframes bgShift{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+        .floating-paw{position:fixed;bottom:20px;right:20px;font-size:2rem;color:#1565c0;animation:bounce 2s infinite;cursor:pointer}
+        @keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-10px)}60%{transform:translateY(-5px)}}
+        .footer{background:linear-gradient(135deg,#1565c0 0%,#42a5f5 100%);color:#fff;text-align:center;padding:1rem;position:relative;overflow:hidden}
+        .footer::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;animation:sparkle 4s linear infinite}
+        @keyframes sparkle{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+        .alert{animation:slideIn .5s ease-out}
+        @keyframes slideIn{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .custom-logout-btn{background:none;border:none;color:#fff;font-size:1.2rem;transition:transform .3s ease}
+        .custom-logout-btn:hover{transform:rotate(180deg)}
+    </style>
+</head>
+<body style="background: linear-gradient(135deg, #f5f5f5 0%, #e8eaf6 100%);">
+    <div class="floating-animals">
+        <i class="bi bi-heart-fill animal-icon" style="top:10%;left:10%;animation-delay:0s;"></i>
+        <i class="bi bi-activity animal-icon" style="top:20%;right:15%;animation-delay:1s;"></i>
+        <i class="bi bi-emoji-smile animal-icon" style="bottom:15%;left:20%;animation-delay:2s;"></i>
+        <i class="bi bi-star-fill animal-icon" style="top:50%;right:10%;animation-delay:3s;"></i>
+        <i class="bi bi-paw-fill animal-icon" style="bottom:30%;right:25%;animation-delay:4s;"></i>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}").catch(function(){});
+        }
+    </script>
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background: linear-gradient(135deg, #1565c0 0%, #42a5f5 100%);">
+        <div class="container">
+            <!-- Логотип ведет на список клиник для владельца, а для клиники — на дашборд -->
+            <a class="navbar-brand fw-bold"
+               href="{% if user.is_authenticated and user.owned_clinics.exists %}{% url 'clinic_dashboard' %}{% else %}{% url 'clinics_list' %}{% endif %}">
+                <span class="bi bi-bandaid logo-medkit"></span>
+                VetMIS
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav"
+                aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="topNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    {% if user.is_authenticated %}
+                        {% if user.owned_clinics.exists %}
+                            <!-- Навигация для владельцев клиник: только профиль, кабинет клиники и выход -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'animal-list' or request.resolver_match.url_name == 'animal_list' %}active{% endif %}"
+                                   href="{% url 'animal-list' %}">
+                                    <span class="bi bi-person-badge"></span> {{ user.username }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'clinic_dashboard' %}active{% endif %}"
+                                   href="{% url 'clinic_dashboard' %}">
+                                    <span class="bi bi-hospital"></span> Кабинет клиники
+                                </a>
+                            </li>
+                        {% else %}
+                            <!-- Навигация для владельцев питомцев: главная, блог, профиль и выход -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'clinics_list' %}active{% endif %}"
+                                   href="{% url 'clinics_list' %}">
+                                    <span class="bi bi-house-door"></span> Главная
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'blog-list' or request.resolver_match.url_name == 'blog_list' %}active{% endif %}"
+                                   href="{% url 'blog-list' %}">
+                                    <span class="bi bi-newspaper"></span> Блог
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'animal-list' or request.resolver_match.url_name == 'animal_list' %}active{% endif %}"
+                                   href="{% url 'animal-list' %}">
+                                    <span class="bi bi-person-badge"></span> {{ user.username }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="custom-logout-btn" title="Выйти" aria-label="Выйти из аккаунта">
+                                    <span class="bi bi-box-arrow-left"></span>
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <!-- Для неавторизованных: вход и регистрация -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <span class="bi bi-box-arrow-in-right"></span> Вход
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">
+                                <span class="bi bi-person-plus"></span> Регистрация
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5 mb-4 pb-3">
+        <div class="medical-card shadow-sm header-bg mb-4 rounded-4 p-4 animate-fade-in">
+            {% if user.is_authenticated and user.owned_clinics.exists %}
+                <!-- Заголовок для владельцев клиник -->
+                <h1 class="display-6 mb-2">
+                    <span class="bi bi-hospital text-primary animate-pulse"></span>
+                    VetMIS – управление вашей клиникой!
+                </h1>
+                <p class="text-muted mb-0">
+                    Панель управления для ветеринарных клиник.
+                </p>
+            {% else %}
+                <!-- Заголовок для владельцев питомцев и неавторизованных -->
+                <h1 class="display-6 mb-2">
+                    <span class="bi bi-heart-pulse text-danger animate-pulse"></span>
+                    VetMIS – заботимся о здоровье ваших питомцев!
+                </h1>
+                                <p class="text-muted mb-0">
+                    Найдите лучшую ветеринарную клинику для вашего питомца!
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <main class="container mb-5">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer mt-5">
+        <div class="container">
+            <p class="mb-0">&copy; 2023 VetMIS. Все права защищены. <span class="bi bi-heart-fill text-danger"></span></p>
+            <p class="small">Система для ветеринарных клиник и владельцев питомцев.</p>
+        </div>
+    </footer>
+
+    <div class="floating-paw">
+        <span class="bi bi-paw-fill"></span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Анимация для плавного появления
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.animate-fade-in');
+            elements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100);
+            });
+        });
+
+        // Интерактивность для плавающего значка лапы
+        document.querySelector('.floating-paw').addEventListener('click', function() {
+            alert('Спасибо, что заботитесь о питомцах! 🐾');
+        });
+    </script>
+</body>
+</html>
+

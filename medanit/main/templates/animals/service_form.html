@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{{ page_title|default:"Добавить услугу" }} | VetMIS{% endblock %}
+
+{% block content %}
+<div class="card shadow-lg border-0 rounded-4 mt-2">
+    <div class="animal-service-hero d-flex align-items-center gap-4 p-4 pb-3" style="background:linear-gradient(92deg,#e1fcff 0%,#faddcf 100%);border-top-left-radius:.7rem;border-top-right-radius:.7rem;">
+        <div class="flex-shrink-0">
+            {% if animal.photo %}
+                <img src="{{ animal.photo.url }}" alt="Фото {{ animal.name }}" style="width:68px;height:68px;object-fit:cover;border-radius:1.2rem;">
+            {% else %}
+                <span class="bi bi-image text-secondary fs-1 rounded-3 bg-light d-inline-flex align-items-center justify-content-center" style="width:68px;height:68px;"></span>
+            {% endif %}
+        </div>
+        <div>
+            <div class="fw-bold fs-4 mb-1 text-primary">{{ animal.name }}</div>
+            <div class="text-muted small mb-1">{{ animal.species }}, {{ animal.breed }}</div>
+            {% if animal.birthday %}
+            <span class="badge rounded-pill bg-light border text-secondary"><i class="bi bi-egg-fill"></i> {{ animal.birthday|date:"d.m.Y" }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="post" class="row g-3 needs-validation" novalidate autocomplete="off" id="main-service-form">
+            {% csrf_token %}
+
+            <!-- Выбор: общая услуга или своя -->
+            <div class="col-12">
+                <label class="form-label fw-semibold">Тип услуги</label>
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="service_mode" id="service_mode_common" value="common" checked>
+                        <label class="form-check-label" for="service_mode_common">
+                            Из общего списка
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="service_mode" id="service_mode_private" value="private">
+                        <label class="form-check-label" for="service_mode_private">
+                            Своя услуга (видно только вам)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <!-- ВИД УСЛУГИ (общий) -->
+            <div class="col-12" id="row-common-service">
+                <label for="id_service" class="form-label fw-semibold">Вид услуги</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-activity"></i></span>
+                    <select name="service" id="id_service" class="form-select{% if form.service.errors %} is-invalid{% endif %}">
+                        <option value="" selected disabled>Выберите услугу...</option>
+                        {% for option in form.service.field.queryset %}
+                        <option value="{{ option.pk }}"
+                                data-desc="{{ option.description|escapejs }}"
+                                {% if form.service.value|stringformat:"s" == option.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ option.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if form.service.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ form.service.errors|striptags }}
+                </div>
+                {% endif %}
+                <div class="form-text text-muted">Не нашли подходящей? Выберите "Своя услуга" выше.</div>
+            </div>
+            <!-- Ввод СВОЕЙ услуги -->
+            <div class="col-12 d-none" id="row-custom-service">
+                <label for="id_custom_service_name" class="form-label fw-semibold">Название своей услуги</label>
+                <input type="text" name="custom_service_name" maxlength="100" id="id_custom_service_name"
+                    class="form-control" placeholder="Например: Редкая процедура"
+                    value="{% if form.custom_service_name.value %}{{ form.custom_service_name.value }}{% endif %}">
+            </div>
+            <!-- ОПИСАНИЕ УСЛУГИ -->
+            <div class="col-12">
+                <label for="id_service_description" class="form-label fw-semibold">Описание услуги</label>
+                <textarea name="service_description"
+                    id="id_service_description"
+                    rows="2"
+                    class="form-control"
+                >{% if form.service_description.value %}{{ form.service_description.value }}{% endif %}</textarea>
+                <div class="form-text small text-muted">
+                    Описание редактируется только для своей услуги. Для стандартных услуг оно автоматически подставляется из справочника.
+                </div>
+            </div>
+            <!-- СТОИМОСТЬ -->
+            <div class="col-12 col-lg-6">
+                <label for="id_cost" class="form-label fw-semibold">Стоимость</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-currency-ruble"></i></span>
+                    <input type="number" name="cost" step="0.01" id="id_cost"
+                        class="form-control{% if form.cost.errors %} is-invalid{% endif %}" placeholder="например, 750"
+                        value="{% if form.cost.value %}{{ form.cost.value }}{% endif %}">
+                    {% if form.cost.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.cost.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- ДАТА -->
+            <div class="col-12 col-lg-6">
+                <label for="id_date" class="form-label fw-semibold">Дата</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
+                    <input type="date" name="date" id="id_date"
+                        class="form-control{% if form.date.errors %} is-invalid{% endif %}"
+                        value="{% if form.date.value %}{{ form.date.value|date:'Y-m-d' }}{% endif %}">
+                    {% if form.date.errors %}
+                    <div class="invalid-feedback">
+                        {{ form.date.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- КОММЕНТАРИЙ -->
+            <div class="col-12 col-lg-6">
+                <label for="id_custom_description" class="form-label fw-semibold">Комментарий/детали</label>
+                <textarea name="custom_description" cols="40" rows="2" id="id_custom_description" class="form-control"
+                    placeholder="например: курс лечения, примечания">{% if form.custom_description.value %}{{ form.custom_description.value }}{% endif %}</textarea>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                <a href="{% url 'animal-detail' animal.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад к питомцу
+                </a>
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-check-circle me-2"></i> Сохранить услугу
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var descField = document.getElementById("id_service_description");
+    var serviceSelect = document.getElementById("id_service");
+
+    function setDescFieldReadonly(mode) {
+        if (mode === "common") {
+            descField.setAttribute("readonly", "readonly");
+        } else {
+            descField.removeAttribute("readonly");
+        }
+    }
+
+    function updateDescriptionFromSelect() {
+        var selected = serviceSelect.value;
+        if (selected) {
+            var option = serviceSelect.querySelector('option[value="'+selected+'"]');
+            var desc = option ? option.getAttribute('data-desc') : "";
+            descField.value = desc || "";
+        } else {
+            descField.value = "";
+        }
+    }
+
+    function toggleServiceMode() {
+        var mode = document.querySelector('input[name="service_mode"]:checked').value;
+        document.getElementById('row-common-service').classList.toggle("d-none", mode !== "common");
+        document.getElementById('row-custom-service').classList.toggle("d-none", mode !== "private");
+        setDescFieldReadonly(mode);
+        if (mode === "common") {
+            updateDescriptionFromSelect();
+            document.getElementById("id_custom_service_name").value = "";
+        } else {
+            descField.value = "";
+            document.getElementById("id_service").selectedIndex = 0;
+        }
+    }
+
+    document.querySelectorAll('input[name="service_mode"]').forEach(radio =>
+        radio.addEventListener("change", toggleServiceMode)
+    );
+    serviceSelect.addEventListener("change", function() {
+        var mode = document.querySelector('input[name="service_mode"]:checked').value;
+        if (mode === "common") {
+            updateDescriptionFromSelect();
+        }
+    });
+
+    // Инициализация -- выставить поле description, режимы и readonly корректно (поле всегда readonly если выбран общий сервис)
+    // Если было предзаполнено (например, POST с ошибками) – корректно выставить
+    (function initialState() {
+        // Определяем выбранный режим (значение в POST -- если была ошибка, восстановить)
+        var mode = "common";
+        // Если пользователь заполнял "свою услугу", выставим: иначе — "общая"
+        var customServiceInput = document.getElementById("id_custom_service_name");
+        var hasCustom = customServiceInput && customServiceInput.value.trim().length > 0;
+        if(hasCustom) {
+            document.getElementById("service_mode_private").checked = true;
+            mode = "private";
+        } else {
+            document.getElementById("service_mode_common").checked = true;
+            mode = "common";
+        }
+        setDescFieldReadonly(mode);
+
+        if(mode === "common") {
+            updateDescriptionFromSelect();
+        }
+        document.getElementById('row-common-service').classList.toggle("d-none", mode !== "common");
+        document.getElementById('row-custom-service').classList.toggle("d-none", mode !== "private");
+    })();
+});
+</script>
+{% endblock %}

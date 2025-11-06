@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Запись на приём - {{ clinic.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card fade-in">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><i class="fas fa-calendar-plus"></i> Запись на приём в {{ clinic.name }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <form id="appointmentForm" method="post" action="{% url 'book_appointment' clinic.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="petSelect" class="form-label"><i class="fas fa-paw"></i> Выберите питомца</label>
+                            <select class="form-select" id="petSelect" name="pet">
+                                <option value="">-- Выберите питомца или создайте нового --</option>
+                                {% for pet in user_pets %}
+                                    <option value="{{ pet.id }}" {% if selected_pet == pet.id %}selected{% endif %}>{{ pet.name }} ({{ pet.species }})</option>
+                                {% endfor %}
+                                <option value="">Создать нового питомца</option>
+                            </select>
+                        </div>
+                        <div id="newPetFields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="petName" class="form-label"><i class="fas fa-tag"></i> Имя питомца</label>
+                                <input type="text" class="form-control" id="petName" name="pet_name" value="{{ pet_name }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="species" class="form-label"><i class="fas fa-dog"></i> Вид животного</label>
+                                <input type="text" class="form-control" id="species" name="species" value="{{ species }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vetSelect" class="form-label"><i class="fas fa-user-md"></i> Выберите ветеринара</label>
+                            <select class="form-select" id="vetSelect" name="vet">
+                                <option value="">-- Выберите ветеринара --</option>
+                                {% for vet in clinic_vets %}
+                                    <option value="{{ vet.id }}" {% if selected_vet == vet.id %}selected{% endif %}>{{ vet.user.first_name }} {{ vet.user.last_name }} ({{ vet.specialization }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactPhone" class="form-label"><i class="fas fa-phone"></i> Контактный телефон</label>
+                            <input type="tel" class="form-control" id="contactPhone" name="contact_phone" value="{{ contact_phone }}" placeholder="+7 (999) 123-45-67">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="desiredDate" class="form-label"><i class="fas fa-calendar"></i> Желаемая дата</label>
+                                <input type="date" class="form-control" id="desiredDate" name="desired_date" value="{{ desired_date }}" min="{{ today }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="desiredTime" class="form-label"><i class="fas fa-clock"></i> Желаемое время</label>
+                                <input type="time" class="form-control" id="desiredTime" name="desired_time" value="{{ desired_time }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comment" class="form-label"><i class="fas fa-comment"></i> Комментарий (опционально)</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="3" placeholder="Опишите причину визита">{{ comment }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-paper-plane"></i> Записаться на приём</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для подтверждения -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel"><i class="fas fa-check-circle"></i> Подтверждение записи</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите записаться на приём?</p>
+                <div id="summary"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmBtn">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.8/dist/inputmask.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const petSelect = document.getElementById('petSelect');
+        const newPetFields = document.getElementById('newPetFields');
+        const form = document.getElementById('appointmentForm');
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        const confirmBtn = document.getElementById('confirmBtn');
+        const summary = document.getElementById('summary');
+
+        // Маска для телефона
+        Inputmask({"mask": "+7 (999) 999-99-99"}).mask("#contactPhone");
+
+        // Показать/скрыть поля нового питомца
+        petSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                newPetFields.style.display = 'block';
+            } else {
+                newPetFields.style.display = 'none';
+            }
+        });
+
+        // Валидация формы
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+            const pet = petSelect.value;
+            const vet = document.getElementById('vetSelect').value;
+            const phone = document.getElementById('contactPhone').value;
+            const date = document.getElementById('desiredDate').value;
+            const time = document.getElementById('desiredTime').value;
+
+            // Сброс ошибок
+            document.querySelectorAll('.error').forEach(el => el.remove());
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+            if (!pet && !document.getElementById('petName').value) {
+                showError(petSelect, 'Выберите питомца или введите данные для нового.');
+                isValid = false;
+            }
+            if (!vet) {
+                showError(document.getElementById('vetSelect'), 'Выберите ветеринара.');
+                isValid = false;
+            }
+            if (!phone) {
+                showError(document.getElementById('contactPhone'), 'Укажите контактный телефон.');
+                isValid = false;
+            }
+            if (!date || !time) {
+                showError(document.getElementById('desiredDate'), 'Укажите дату и время.');
+                isValid = false;
+            }
+
+            if (isValid) {
+                // Показать модальное окно с итогом
+                let petText = pet ? petSelect.options[petSelect.selectedIndex].text : `${document.getElementById('petName').value} (${document.getElementById('species').value})`;
+                let vetText = document.getElementById('vetSelect').options[document.getElementById('vetSelect').selectedIndex].text;
+                summary.innerHTML = `
+                    <p><strong>Питомец:</strong> ${petText}</p>
+                    <p><strong>Ветеринар:</strong> ${vetText}</p>
+                    <p><strong>Дата и время:</strong> ${date} ${time}</p>
+                    <p><strong>Телефон:</strong> ${phone}</p>
+                `;
+                confirmModal.show();
+            }
+        });
+
+        // Подтверждение и отправка
+        confirmBtn.addEventListener('click', function() {
+            form.submit();
+        });
+
+        function showError(element, message) {
+            element.classList.add('is-invalid');
+            const error = document.createElement('div');
+            error.className = 'error';
+            error.textContent = message;
+            element.parentNode.appendChild(error);
+        }
+
+        // Анимация появления
+        setTimeout(() => {
+            document.querySelector('.fade-in').classList.add('show');
+        }, 100);
+
+        // Отладка селектов
+        console.log('User pets:', {{ user_pets|length }});
+        console.log('Clinic vets:', {{ clinic_vets|length }});
+        console.log('Clinic vets details:', { {% for vet in clinic_vets %}{{ vet.id }}: '{{ vet.user.first_name }} {{ vet.user.last_name }}', {% endfor %} });
+    });
+</script>
+
+<style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .card { border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 10px; }
+    .btn-primary { background-color: #007bff; border-color: #007bff; }
+    .btn-primary:hover { background-color: #0056b3; border-color: #0056b3; }
+    .form-control:focus { border-color: #007bff; box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25); }
+    .modal-content { border-radius: 10px; }
+    .equal-height { display: flex; flex-direction: column; }
+    .equal-height .card-body { flex-grow: 1; }
+    .fade-in { opacity: 0; animation: fadeIn 0.5s forwards; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .error { color: red; font-size: 0.875rem; }
+    .success { color: green; font-size: 0.875rem; }
+</style>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'blog-list' %}" class="text-muted small">
+    <span class="bi bi-arrow-left"></span> К списку статей
+  </a>
+</div>
+<div class="card mb-4 shadow-sm">
+  {% if article.preview %}
+    <img src="{{ article.preview.url }}" class="card-img-top" alt="{{ article.title }}">
+  {% endif %}
+  <div class="card-body p-4">
+    <h2 class="mb-2">{{ article.title }}</h2>
+    <div class="mb-3 text-muted small">
+      {{ article.category }} | {{ article.created_at|date:"d.m.Y" }}
+    </div>
+    <div class="blog-article-content">
+      {{ article.content|safe }}
+    </div>
+  </div>
+</div>
+{% endblock %}

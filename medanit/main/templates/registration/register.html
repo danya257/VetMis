@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); min-height: 100vh; display: flex; align-items: center;">
+  <div class="row justify-content-center w-100">
+    <div class="col-md-7 col-lg-5">
+      <div class="card shadow-lg border-0 rounded-4 animate-slide-in">
+        <div class="card-header bg-success text-white text-center rounded-top position-relative overflow-hidden">
+          <div class="animated-bg"></div>
+          <h2 class="mb-0 fw-bold position-relative z-1">
+            <i class="bi bi-person-plus animate-pulse"></i> Регистрация
+          </h2>
+        </div>
+        <div class="card-body pb-2">
+          <form method="post" autocomplete="off">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger mb-3 animate-fade-in">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                {% for error in form.non_field_errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% for field in form %}
+              <div class="mb-3 animate-slide-up">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+                <div class="input-group input-hover">
+                  {% if field.name == 'username' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  {% elif field.name == 'email' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                  {% elif field.name == 'password1' or field.name == 'password' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                  {% elif field.name == 'password2' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-lock-fill"></i></span>
+                  {% endif %}
+                  {{ field|add_class:"form-control" }}
+                </div>
+                {% if field.help_text %}
+                  <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                  <div class="text-danger small mt-1 animate-fade-in">{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-success w-100 mt-2 mb-3 shadow btn-hover-submit">
+              <i class="bi bi-person-plus me-1"></i> Зарегистрироваться
+            </button>
+          </form>
+          <p class="mt-2 mb-0 text-center small">
+            Уже зарегистрированы?
+            <a href="{% url 'login' %}" class="link-success link-hover">Войти</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .animate-slide-in {
+    animation: slideIn 0.8s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .btn-hover-submit {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-hover-submit:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  }
+
+  .input-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .input-hover:hover {
+    transform: translateY(-2px);
+  }
+  .input-hover:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(25,135,84,0.25);
+    transform: scale(1.02);
+  }
+
+  .link-hover {
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+  }
+  .link-hover:hover {
+    color: #0d6efd !important;
+    text-decoration: underline;
+  }
+
+  .animated-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+    animation: bgMove 3s infinite ease-in-out;
+  }
+  @keyframes bgMove {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .form-control {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25,135,84,0.25);
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 1rem;
+    }
+    .card {
+      margin: 0 1rem;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    // Add floating label effect or other enhancements
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+      input.addEventListener('input', function() {
+        if (this.value.trim() !== '') {
+          this.classList.add('has-value');
+        } else {
+          this.classList.remove('has-value');
+        }
+      });
+    });
+
+    // Animate form fields on load
+    const formFields = document.querySelectorAll('.mb-3');
+    formFields.forEach((field, index) => {
+      field.style.animationDelay = `${index * 0.1}s`;
+    });
+  })();
+</script>
+{% endblock %}

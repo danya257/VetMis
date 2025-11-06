@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Список ветеринарных клиник{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-4">Ветеринарные клиники 🏥</h1>
+  
+  <!-- Поле поиска (клиентская фильтрация) -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="input-group">
+        <input type="text" id="searchInput" class="form-control" placeholder="Поиск по названию клиники или услуге... 🔍">
+        <button class="btn btn-outline-secondary" type="button" id="clearSearch">Очистить</button>
+      </div>
+      <small class="text-muted">Результаты обновляются автоматически по мере ввода.</small>
+    </div>
+  </div>
+  
+  <!-- Контейнер для результатов поиска -->
+  <div class="row" id="clinicsContainer">
+    {% for clinic in clinics %}
+    <div class="col-lg-4 col-md-6 mb-4 clinic-card" 
+         data-name="{{ clinic.name|lower }}"
+         data-services="{% for cs in clinic.clinic_services_prefetched %}{% if cs.is_active %}{{ cs.service.name|lower }}; {% endif %}{% empty %}нет услуг{% endfor %}">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ clinic.name }}</h5>
+          {% if clinic.address %}
+          <p class="card-text text-muted">{{ clinic.address|truncatechars:50 }}</p>
+          {% endif %}
+          <div class="mt-auto">
+            <button class="btn btn-primary btn-sm me-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#clinicModal"
+                    data-name="{{ clinic.name|default:'' }}"
+                    data-address="{{ clinic.address|default:'Не указан' }}"
+                    data-description="{{ clinic.description|default:'Нет описания' }}"
+                    data-phone="{{ clinic.phone|default:'Не указан' }}"
+                    data-email="{{ clinic.email|default:'Не указан' }}"
+                    data-working-hours="{{ clinic.working_hours|default:'Не указаны' }}"
+                    data-services="{% for cs in clinic.clinic_services_prefetched %}{% if cs.is_active %}{{ cs.service.name }} — {{ cs.price }} {{ cs.currency.code }}{% if not forloop.last %}; {% endif %}{% endif %}{% empty %}Нет услуг{% endfor %}"
+                    data-vets="{% firstof clinic.vets_prefetched|length 0 %}">
+              Подробнее
+            </button>
+            <a href="{% url 'book_appointment' clinic.id %}" class="btn btn-outline-success btn-sm">
+              Записаться
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-info text-center">
+        <p>Клиник пока нет. 😔</p>
+        <p>Возможно, они скоро появятся!</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Сообщение "Ничего не найдено" -->
+  <div class="row" id="noResults" style="display: none;">
+    <div class="col-12">
+      <div class="alert alert-warning text-center">
+        <p>Ничего не найдено по вашему запросу. 😕</p>
+        <p>Попробуйте изменить поисковый запрос.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно для подробностей клиники -->
+<div class="modal fade" id="clinicModal" tabindex="-1" aria-labelledby="clinicModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clinicModalLabel">Информация о клинике</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Адрес:</strong> <span id="modalAddress"></span></p>
+            <p><strong>Телефон:</strong> <span id="modalPhone"></span></p>
+            <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Часы работы:</strong> <span id="modalWorkingHours"></span></p>
+            <p><strong>Врачей:</strong> <span id="modalVets"></span></p>
+          </div>
+        </div>
+        <hr>
+        <p><strong>Описание:</strong> <span id="modalDescription"></span></p>
+        <hr>
+        <h6 class="mb-2">Услуги и цены</h6>
+        <div id="clinicServices" class="small text-muted">
+          <!-- Наполняется JavaScript из data-services -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript для клиентского поиска и модального окна -->
+<script>
+$(document).ready(function() {
+  // Функция фильтрации карточек
+  function filterClinics(query) {
+    query = query.toLowerCase().trim();
+    var cards = $('.clinic-card');
+    var visibleCount = 0;
+
+    cards.each(function() {
+      var card = $(this);
+      var name = card.data('name') || '';
+      var services = card.data('services') || '';
+
+      if (name.includes(query) || services.includes(query)) {
+        card.show();
+        visibleCount++;
+      } else {
+        card.hide();
+      }
+    });
+
+    // Показать/скрыть сообщение "Ничего не найдено"
+    if (visibleCount === 0 && query !== '') {
+      $('#clinicsContainer').hide();
+      $('#noResults').show();
+    } else {
+      $('#clinicsContainer').show();
+      $('#noResults').hide();
+    }
+  }
+
+  // Слушатель на поле поиска
+  $('#searchInput').on('input', function() {
+    var query = $(this).val();
+    filterClinics(query);
+  });
+
+  // Кнопка очистки
+  $('#clearSearch').on('click', function() {
+    $('#searchInput').val('');
+    filterClinics('');
+  });
+
+  // JavaScript для модального окна (остается как раньше)
+  $('#clinicModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var name = button.data('name');
+    var address = button.data('address');
+    var description = button.data('description');
+    var phone = button.data('phone');
+    var email = button.data('email');
+    var workingHours = button.data('working-hours');
+    var vets = button.data('vets');
+    var services = button.data('services');
+
+    $('#clinicModalLabel').text(name);
+    $('#modalAddress').text(address);
+    $('#modalDescription').text(description);
+    $('#modalPhone').text(phone);
+    $('#modalEmail').text(email);
+    $('#modalWorkingHours').text(workingHours);
+    $('#modalVets').text(vets);
+    $('#clinicServices').text(services);
+  });
+});
+</script>
+
+{% endblock %}

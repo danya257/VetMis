@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10 col-12">
+      <div class="card shadow-lg rounded-4 border-0 position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);">
+        <!-- Плавающие элементы для ветеринарной тематики -->
+        <div class="floating-elements">
+          <i class="bi bi-paw-fill floating-paw-detail" style="top: 10%; left: 5%; animation-delay: 0s;"></i>
+          <i class="bi bi-heart-fill floating-heart-detail" style="top: 20%; right: 10%; animation-delay: 1s;"></i>
+          <i class="bi bi-star-fill floating-star-detail" style="bottom: 15%; left: 15%; animation-delay: 2s;"></i>
+          <i class="bi bi-shield-check floating-shield-detail" style="top: 40%; left: 80%; animation-delay: 3s;"></i>
+          <i class="bi bi-activity floating-activity-detail" style="bottom: 30%; right: 20%; animation-delay: 4s;"></i>
+        </div>
+        <div class="row g-0">
+          <div class="col-md-4 d-flex align-items-center justify-content-center p-3">
+            {% if animal.photo %}
+              <img src="{{ animal.photo.url }}" alt="Фото {{ animal.name }}"
+                   class="img-fluid rounded-3 border animal-detail-photo animate-zoom-in"
+                   style="max-height:240px; object-fit:cover; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center w-100 h-100">
+                <span class="bi bi-image bg-light text-secondary rounded-3 d-inline-flex align-items-center justify-content-center animate-bounce-in"
+                      style="width:160px; height:160px; font-size:4rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></span>
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <div class="card-body ps-md-4 pt-3 pt-md-4">
+              <h2 class="card-title text-primary fw-bold mb-2 animate-slide-in">
+                {{ animal.name|default:"Нет имени" }}
+                <span class="badge bg-info ms-2 fs-6 animate-fade-in">{{ animal.species|default:"—" }}</span>
+              </h2>
+              <ul class="list-group list-group-flush mb-3">
+                <li class="list-group-item bg-transparent px-0 py-1 border-0 animate-slide-in" style="animation-delay: 0.2s;">
+                  <span class="fw-semibold text-muted">
+                    <i class="bi bi-egg-fill text-success"></i>
+                    Дата рождения:
+                  </span>
+                  <span>
+                    {% if animal.birthday %}{{ animal.birthday|date:"d.m.Y" }}{% else %}<span class="text-secondary">—</span>{% endif %}
+                  </span>
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-1 border-0 animate-slide-in" style="animation-delay: 0.4s;">
+                  <span class="fw-semibold text-muted">
+                    <i class="bi bi-person-badge"></i>
+                    Порода:
+                  </span>
+                  <span>{{ animal.breed|default:"—" }}</span>
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-1 border-0 animate-slide-in" style="animation-delay: 0.6s;">
+                  <span class="fw-semibold text-muted">
+                    <i class="bi bi-person"></i>
+                    Владелец:
+                  </span>
+                  <span>{{ animal.owner.get_full_name|default:animal.owner.username }}</span>
+                </li>
+                {# Можно добавить еще поля при необходимости #}
+              </ul>
+              <div class="d-flex gap-2 flex-wrap animate-fade-in" style="animation-delay: 0.8s;">
+                <a href="{% url 'animal-update' animal.id %}" class="btn btn-outline-primary animate-hover">
+                  <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                <a href="{% url 'service-list' animal.id %}" class="btn btn-outline-success animate-hover">
+                  <i class="bi bi-briefcase-medical"></i> Мед.услуги
+                </a>
+                <a href="{% url 'animal-list' %}" class="btn btn-outline-secondary animate-hover">
+                  <i class="bi bi-arrow-left-short"></i> К списку животных
+                </a>
+                <button type="button" onclick="history.back()" class="btn btn-outline-info animate-hover">
+                  <i class="bi bi-arrow-left-circle"></i> Назад
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Блок с дополнительной информацией: последние услуги или вакцинация -->
+      <div class="mt-4">
+        <h4 class="text-center mb-3 animate-slide-up">
+          <i class="bi bi-clipboard-check text-info"></i> Последние медицинские записи
+        </h4>
+        <div class="card shadow-sm rounded-3 border-0 animate-fade-in animate-pulse">
+          <div class="card-body">
+            <!-- Здесь можно добавить цикл для отображения последних услуг, если есть модель -->
+            {% if animal.services %}
+              <ul class="list-group list-group-flush">
+                {% for service in animal.services|slice:":5" %} <!-- Ограничим до 5 последних -->
+                <li class="list-group-item animate-slide-in animate-glow" style="animation-delay: {{ forloop.counter0 }}s;">
+                  <strong>{{ service.name }}</strong> — {{ service.date|date:"d.m.Y" }} ({{ service.description }})
+                </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-center text-muted animate-bounce-in animate-pulse">Нет записей о медицинских услугах. Добавьте первую!</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Дополнительные стили для анимаций -->
+<style>
+  /* Плавающие элементы */
+  .floating-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .floating-paw-detail, .floating-heart-detail, .floating-star-detail, .floating-shield-detail, .floating-activity-detail {
+    position: absolute;
+    font-size: 1.2rem;
+    color: rgba(21, 101, 192, 0.2);
+    animation: float-detail 6s ease-in-out infinite;
+  }
+  @keyframes float-detail {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+  }
+
+  /* Анимации появления */
+  .animate-zoom-in {
+    animation: zoomIn 0.8s ease-out;
+  }
+  @keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.8s ease-out;
+  }
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(-50px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-hover:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+  }
+
+  .animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .animate-glow {
+    animation: glow 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes glow {
+    from { box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); }
+    to { box-shadow: 0 0 20px rgba(0, 123, 255, 0.8); }
+  }
+
+  .animate-rotate-in {
+    animation: rotateIn 0.8s ease-out;
+  }
+  @keyframes rotateIn {
+    from { transform: rotate(-180deg) scale(0.5); opacity: 0; }
+    to { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  .animate-wiggle {
+    animation: wiggle 1s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+  }
+
+  .card {
+    transition: all 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn {
+    transition: all 0.3s ease;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .badge {
+    animation: badge-pop 0.6s ease-out;
+  }
+  @keyframes badge-pop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+<style>
+.select2-container--default .select2-selection--single {
+  height: 48px;
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  border-radius: .5rem;
+  background-color: #fff;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+.select2-container--default .select2-selection--single:hover {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+.animal-photo-preview {
+  display: block;
+  max-width: 120px;
+  max-height: 120px;
+  margin-bottom: 12px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.animal-photo-preview:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.photo-preview-block {
+  margin-bottom: 0.4rem;
+}
+.medical-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  animation: fadeInUp 0.8s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.floating-elements-form {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.floating-paw-form, .floating-heart-form, .floating-star-form, .floating-shield-form, .floating-activity-form, .floating-bone-form, .floating-ball-form, .floating-fish-form, .floating-bird-form, .floating-cloud-form {
+  position: absolute;
+  font-size: 1.2rem;
+  color: rgba(21, 101, 192, 0.15);
+  animation: float-form 6s ease-in-out infinite;
+}
+@keyframes float-form {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(10deg); }
+}
+.form-control, .form-select {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-control:focus, .form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+.btn-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+.mb-3 {
+  animation: slideInLeft 0.6s ease-out;
+}
+.mb-3:nth-child(2) { animation-delay: 0.1s; }
+.mb-3:nth-child(3) { animation-delay: 0.2s; }
+.mb-3:nth-child(4) { animation-delay: 0.3s; }
+.mb-4 { animation-delay: 0.4s; }
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.text-danger {
+  animation: shake 0.5s ease-in-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-glow {
+  animation: glow 1.5s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from { box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); }
+  to { box-shadow: 0 0 20px rgba(0, 123, 255, 0.8); }
+}
+@keyframes bounceIn {
+  from, 20%, 40%, 60%, 80%, to {
+    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+  }
+  0% {
+    opacity: 0;
+    transform: scale3d(.3, .3, .3);
+  }
+  20% {
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+  40% {
+    transform: scale3d(.9, .9, .9);
+  }
+  60% {
+    opacity: 1;
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+  80% {
+    transform: scale3d(.97, .97, .97);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes scaleUp {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.form-label {
+  animation: fadeInScale 0.5s ease-out;
+}
+.form-label:nth-child(1) { animation-delay: 0.1s; }
+.form-label:nth-child(2) { animation-delay: 0.2s; }
+.form-label:nth-child(3) { animation-delay: 0.3s; }
+.form-label:nth-child(4) { animation-delay: 0.4s; }
+.form-label:nth-child(5) { animation-delay: 0.5s; }
+.btn-success, .btn-outline-info {
+  animation: bounceIn 0.8s ease-out;
+}
+.btn-success { animation-delay: 0.6s; }
+.btn-outline-info { animation-delay: 0.7s; }
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 123, 255, 0.3);
+  border-radius: 50%;
+  animation: particleFloat 4s ease-in-out infinite;
+}
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+  50% { transform: translateY(-20px) translateX(10px); opacity: 1; }
+}
+.progress-bar-form {
+  width: 100%;
+  height: 4px;
+  background: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.8s ease-out 0.5s both;
+}
+.progress-fill-form {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.tooltip-custom {
+  position: relative;
+  display: inline-block;
+}
+.tooltip-custom .tooltiptext {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tooltip-custom:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <form method="post" enctype="multipart/form-data" class="p-4 medical-card shadow rounded-4 border position-relative" id="animal-form">
+
+        {% csrf_token %}
+
+        <div class="progress-bar-form">
+          <div class="progress-fill-form" id="form-progress"></div>
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold tooltip-custom">
+            Кличка
+            <span class="tooltiptext">Введите имя вашего питомца</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}
+          <div class="text-danger small mt-1">
+            {% for error in form.name.errors %}
+            {{ error }}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="id_species" class="form-label fw-semibold tooltip-custom">
+            Вид питомца
+            <span class="tooltiptext">Выберите или введите вид</span>
+          </label>
+          <select id="id_species" name="species" class="form-select select2-species shadow-sm" required>
+            {% for value, label in species_choices %}
+              <option value="{{ value }}"{% if value == selected_species %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+            <option value="__other__"{% if selected_species == "__other__" %} selected{% endif %}>Прочее...</option>
+          </select>
+          <div id="species-error-placeholder">
+            {% if form.custom_species.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.custom_species.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <div id="custom-species-input-wrapper"></div>
+        </div>
+
+        <div class="mb-3">
+          <label for="id_breed" class="form-label fw-semibold tooltip-custom">
+            Порода
+            <span class="tooltiptext">Выберите или введите породу</span>
+          </label>
+          <select id="id_breed" name="breed" class="form-select select2-breed shadow-sm" required>
+            {% for breed in breed_choices %}
+              <option value="{{ breed }}"{% if breed == selected_breed %} selected{% endif %}>{{ breed }}</option>
+            {% endfor %}
+            <option value="__other__"{% if selected_breed == "__other__" %} selected{% endif %}>Прочее...</option>
+          </select>
+          <div id="breed-error-placeholder">
+            {% if form.custom_breed.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.custom_breed.errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <div id="custom-breed-input-wrapper"></div>
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.birthday.id_for_label }}" class="form-label fw-semibold tooltip-custom">
+            Дата рождения
+            <span class="tooltiptext">Укажите дату рождения</span>
+          </label>
+          {% if form.birthday.field.widget.input_type == "date" %}
+            <input type="date"
+                   name="{{ form.birthday.name }}"
+                   id="{{ form.birthday.id_for_label }}"
+                   class="form-control"
+                   value="{% if form.birthday.value %}{{ form.birthday.value|date:'Y-m-d' }}{% endif %}">
+          {% else %}
+            {{ form.birthday }}
+          {% endif %}
+          {% if form.birthday.errors %}
+          <div class="text-danger small mt-1">
+            {% for error in form.birthday.errors %}
+            {{ error }}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <label for="{{ form.photo.id_for_label }}" class="form-label fw-semibold tooltip-custom">
+            Фото питомца
+            <span class="tooltiptext">Загрузите фото (изображение)</span>
+          </label>
+          {% if object.photo %}
+            <div class="photo-preview-block mb-2">
+              <img src="{{ object.photo.url }}" alt="Фото {{ object.name }}" class="animal-photo-preview" />
+            </div>
+          {% endif %}
+          <input type="file" name="photo" class="form-control" accept="image/*" id="{{ form.photo.id_for_label }}">
+          {% if object.photo %}
+            <div class="form-check mt-2">
+              <input type="checkbox" name="photo-clear" id="photo-clear_id" class="form-check-input">
+              <label for="photo-clear_id" class="form-check-label">Удалить фото</label>
+            </div>
+          {% endif %}
+          {% if form.photo.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.photo.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="mt-3 btn btn-lg btn-success w-100 animate-pulse">
+            {% if object.pk %}Сохранить изменения{% else %}Добавить питомца{% endif %}
+        </button>
+        <div class="text-center mt-3">
+          <button type="button" class="btn btn-outline-info" onclick="window.history.back();">Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+var BREEDS_BY_SPECIES = {{ breeds_by_species_json| safe }};
+
+function addCustomInput(id, name, placeholder, value) {
+  return $('<input>', {
+    type: 'text',
+    id: id,
+    name: name,
+    class: 'form-control mt-2 animate__animated animate__fadeInUp',
+    placeholder: placeholder,
+    autocomplete: 'off',
+    value: value || ''
+  });
+}
+
+function showCustomInput($select, id, name, placeholder, value, $errorDiv, wrapperId) {
+  var $wrapper = $('#' + wrapperId);
+  $wrapper.empty();
+  if ($select.val() === '__other__') {
+    var input = addCustomInput(id, name, placeholder, value);
+    $wrapper.append(input);
+    if ($errorDiv && $errorDiv.length && $errorDiv.html().trim()) {
+      input.after($errorDiv.html());
+    }
+  }
+}
+
+function ensureSingleSelect2($sel, opts) {
+  if ($.fn.select2 && $sel.data('select2')) {
+    $sel.select2('destroy');
+  }
+  $sel.select2(opts || {});
+}
+
+function updateBreedOptions() {
+  var selectedSpecies = $('#id_species').val();
+  var $breed = $('#id_breed');
+  var currentBreed = $breed.val();
+  var breedList = BREEDS_BY_SPECIES[selectedSpecies] || [];
+  var selectOther = currentBreed === '__other__';
+
+  $breed.empty();
+  $.each(breedList, function (i, breed) {
+    $breed.append($('<option>', { value: breed, text: breed }));
+  });
+  $breed.append($('<option>', { value: '__other__', text: 'Прочее...' }));
+
+  if (breedList.includes(currentBreed)) {
+    $breed.val(currentBreed);
+  } else if (selectOther) {
+    $breed.val('__other__');
+  } else {
+    $breed.val(breedList.length ? breedList[0] : '__other__');
+  }
+
+  ensureSingleSelect2($breed, { theme: 'bootstrap-5', width: '100%' });
+
+  showCustomInput($breed, 'custom_breed', 'custom_breed', 'Введите породу', '{{ custom_breed|default_if_none:"" }}', $('#breed-error-placeholder'), 'custom-breed-input-wrapper');
+}
+
+function validateForm() {
+  var isValid = true;
+  $('#animal-form input[required], #animal-form select[required]').each(function() {
+    if (!$(this).val()) {
+      $(this).addClass('is-invalid animate__animated animate__shake');
+      isValid = false;
+    } else {
+      $(this).removeClass('is-invalid');
+    }
+  });
+  return isValid;
+}
+
+function animateSuccess() {
+  $('.btn-success').addClass('animate__animated animate__bounce');
+  setTimeout(function() {
+    $('.btn-success').removeClass('animate__animated animate__bounce');
+  }, 1000);
+}
+
+function updateProgress() {
+  var totalFields = $('#animal-form input[required], #animal-form select[required]').length;
+  var filledFields = 0;
+  $('#animal-form input[required], #animal-form select[required]').each(function() {
+    if ($(this).val()) filledFields++;
+  });
+  var progress = (filledFields / totalFields) * 100;
+  $('#form-progress').css('width', progress + '%');
+}
+
+function createParticles() {
+  for (var i = 0; i < 20; i++) {
+    var particle = $('<div class="particle"></div>');
+    particle.css({
+      left: Math.random() * 100 + '%',
+      top: Math.random() * 100 + '%',
+      animationDelay: Math.random() * 4 + 's'
+    });
+    $('.medical-card').append(particle);
+    setTimeout(function(p) {
+      p.remove();
+    }, 4000, particle);
+  }
+}
+
+$(function () {
+  ensureSingleSelect2($('#id_species'), { theme: 'bootstrap-5', width: '100%' });
+  ensureSingleSelect2($('#id_breed'), { theme: 'bootstrap-5', width: '100%' });
+
+  $('#id_species').on('change', function () {
+    showCustomInput($('#id_species'), 'custom_species', 'custom_species', 'Введите вид питомца', '{{ custom_species|default_if_none:"" }}', $('#species-error-placeholder'), 'custom-species-input-wrapper');
+    updateBreedOptions();
+    $('#custom-breed-input-wrapper').empty();
+    updateProgress();
+  });
+
+  $('#id_breed').on('change', function () {
+    showCustomInput($('#id_breed'), 'custom_breed', 'custom_breed', 'Введите породу', '{{ custom_breed|default_if_none:"" }}', $('#breed-error-placeholder'), 'custom-breed-input-wrapper');
+    updateProgress();
+  });
+
+  showCustomInput($('#id_species'), 'custom_species', 'custom_species', 'Введите вид питомца', '{{ custom_species|default_if_none:"" }}', $('#species-error-placeholder'), 'custom-species-input-wrapper');
+  showCustomInput($('#id_breed'), 'custom_breed', 'custom_breed', 'Введите породу', '{{ custom_breed|default_if_none:"" }}', $('#breed-error-placeholder'), 'custom-breed-input-wrapper');
+  updateBreedOptions();
+  updateProgress();
+
+  $('#animal-form').on('submit', function(e) {
+    if (!validateForm()) {
+      e.preventDefault();
+      alert('Пожалуйста, заполните все обязательные поля.');
+      createParticles();
+    } else {
+      animateSuccess();
+    }
+  });
+
+  $('#{{ form.photo.id_for_label }}').on('change', function() {
+    var file = this.files[0];
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        $('.animal-photo-preview').attr('src', e.target.result).show().addClass('animate__animated animate__zoomIn');
+      };
+      reader.readAsDataURL(file);
+    }
+    updateProgress();
+  });
+
+  $('.form-control, .form-select').on('input change', function() {
+    $(this).removeClass('is-invalid');
+    updateProgress();
+  });
+
+  // Добавление анимации свечения к кнопке при загрузке страницы
+  setTimeout(function() {
+    $('.btn-success').addClass('animate-glow');
+  }, 1000);
+
+  // Дополнительные анимации на скролл
+  $(window).on('scroll', function() {
+    $('.floating-elements-form > div').each(function() {
+      var elementTop = $(this).offset().top;
+      var viewportTop = $(window).scrollTop();
+      if (elementTop < viewportTop + $(window).height()) {
+        $(this).addClass('animate__animated animate__rotateIn');
+      }
+    });
+  });
+
+  // Типоанимация для заголовков
+  $('.form-label').each(function(index) {
+    var text = $(this).text();
+    $(this).text('');
+    var i = 0;
+    var timer = setInterval(function() {
+      $(this).append(text[i]);
+      i++;
+      if (i >= text.length) clearInterval(timer);
+    }.bind(this), 50);
+  });
+
+  // Интерактивные эффекты
+  $('.btn-success').on('mouseenter', function() {
+    $(this).css('animation', 'rotate 1s ease-in-out');
+  }).on('mouseleave', function() {
+    $(this).css('animation', '');
+  });
+
+  createParticles();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Блог</h2>
+<div class="row row-cols-1 row-cols-md-2 g-4">
+  {% for article in articles %}
+    <div class="col mb-3">
+      <div class="card h-100">
+        {% if article.preview %}
+          <img src="{{ article.preview.url }}" class="card-img-top" alt="{{ article.title }}">
+        {% endif %}
+        <div class="card-body">
+          <h5><a href="{% url 'blog-article' article.slug %}" class="text-decoration-none">{{ article.title }}</a></h5>
+          <div class="text-muted small mb-1">{{ article.category }} | {{ article.created_at|date:"d.m.Y" }}</div>
+          <div class="mb-2">{{ article.content|truncatechars:120|safe }}</div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col">Пока нет статей.</div>
+  {% endfor %}
+</div>
+{% if is_paginated %}
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a></li>
+      {% endif %}
+      {% for i in paginator.page_range %}
+        <li class="page-item{% if i == page_obj.number %} active{% endif %}">
+          <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+        </li>
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+{% endblock %}

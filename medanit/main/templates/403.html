@@ -1,0 +1,9 @@
+<!-- templates/404.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="text-danger display-3">403</h1>
+  <p class="lead mb-3">Доступ запрещен.</p>
+  <a href="{% url 'animal-list' %}" class="btn btn-outline-primary">На главную</a>
+</div>
+{% endblock %}

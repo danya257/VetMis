@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<style>
+  .services-table th, .services-table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+  .services-table th {
+    background: #b7dad2;
+  }
+  .services-table td {
+    background: #f7faf9;
+  }
+  .service-performer {
+    color: #45916c;
+    font-weight: 500;
+    font-size: 0.97em;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center">
+    <h2 class="mb-3 fw-bold">
+      Медицинские услуги для: <span class="text-primary">{{ animal.name|escape }}</span>
+      <span class="small text-muted">({{ animal.species|default:"—" }}{% if animal.breed %}, {{ animal.breed }}{% endif %})</span>
+    </h2>
+    <a href="{% url 'service-create' animal.pk %}" class="btn btn-success btn-lg shadow-sm">
+      <i class="bi bi-plus-circle me-1"></i> Добавить услугу
+    </a>
+  </div>
+
+  <hr class="my-4">
+
+  {% if services %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover rounded services-table">
+        <thead>
+          <tr>
+            <th style="width:12%;">Дата</th>
+            <th style="width:38%;">Описание услуги</th>
+            <th style="width:18%;">Исполнитель</th>
+            <th style="width:14%;">Стоимость</th>
+            <th style="width:8%;">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for service in services %}
+            <tr>
+              <td>
+                {{ service.date|date:"d.m.Y" }}
+                <div class="small text-muted">
+                  {{ service.date|time:"H:i" }}
+                </div>
+              </td>
+              <td class="text-start">
+                {{ service.description|linebreaksbr|escape }}
+              </td>
+              <td>
+                {% if service.performer %}
+                  <span class="service-performer">{{ service.performer.get_full_name|default:service.performer.username }}</span>
+                {% else %}
+                  <span class="text-secondary">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if service.cost is not None %}
+                  <span class="fw-semibold">{{ service.cost }} ₽</span>
+                {% else %}
+                  <span class="text-secondary">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'service-update' service.pk %}" class="btn btn-sm btn-outline-primary" title="Редактировать">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'service-delete' service.pk %}" class="btn btn-sm btn-outline-danger" title="Удалить">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info my-5 shadow-sm" role="alert">
+      Нет данных о медицинских услугах для этого питомца.<br>
+      <a href="{% url 'service-create' animal.pk %}" class="btn btn-outline-success mt-3">
+        <i class="bi bi-plus-circle me-1"></i>Добавить первую услугу
+      </a>
+    </div>
+  {% endif %}
+
+  <a href="{% url 'animal-detail' animal.pk %}" class="btn btn-link mt-4">
+    <i class="bi bi-arrow-left"></i> Назад к питомцу
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Bootstrap icons (если еще не подключены) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+    <h2 class="mb-2 mb-md-0">
+      Кабинет клиники
+      {% if current_clinic %}
+        <small class="text-muted">— {{ current_clinic.name }}</small>
+      {% endif %}
+    </h2>
+
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'clinic_switch' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'clinic_dashboard' %}">
+        <div class="input-group">
+          <label class="input-group-text" for="clinic-id">Клиника</label>
+          <select class="form-select" id="clinic-id" name="clinic_id" onchange="this.form.submit()">
+            {% for c in clinics %}
+              <option value="{{ c.id }}" {% if current_clinic and c.id == current_clinic.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+
+      <form method="get" action="{% url 'clinic_dashboard' %}">
+        <div class="input-group">
+          <label class="input-group-text" for="period">Период</label>
+          <select class="form-select" id="period" name="period" onchange="this.form.submit()">
+            {% with p=metrics.period|default:'30d' %}
+              <option value="7d" {% if p == '7d' %}selected{% endif %}>7 дней</option>
+              <option value="30d" {% if p == '30d' %}selected{% endif %}>30 дней</option>
+              <option value="90d" {% if p == '90d' %}selected{% endif %}>90 дней</option>
+              <option value="all" {% if p == 'all' %}selected{% endif %}>За всё время</option>
+            {% endwith %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if no_clinics %}
+    <div class="alert alert-info">
+      У вас пока нет клиник. Зарегистрируйте клинику, чтобы увидеть дашборд.
+    </div>
+    {% endif  %}
+  
+
+  {% if not metrics %}
+    <div class="alert alert-warning">Нет данных для отображения.</div>
+  {% else %}
+    <!-- Cards -->
+    <div class="row g-3 mb-3">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Всего записей (период)</div>
+            <div class="display-6">{{ metrics.total }}</div>
+            <div class="small text-secondary">c {{ metrics.start_at|date:"d.m.Y" }} по {{ metrics.end_at|date:"d.m.Y" }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Запланировано (впереди)</div>
+            <div class="display-6">{{ metrics.upcoming }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Сегодня</div>
+            <div class="display-6">{{ metrics.today }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Отменено (период)</div>
+            <div class="display-6 text-danger">{{ metrics.cancelled }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- More cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Завершено (период)</div>
+            <div class="display-6 text-success">{{ metrics.completed }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small">Перенесено (период)</div>
+            <div class="display-6 text-warning">{{ metrics.rescheduled }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-2">Топ услуг (период)</div>
+            <ol class="mb-0">
+              {% for it in metrics.top_event_types %}
+                <li class="d-flex justify-content-between">
+                  <span>{{ it.event_type__name|default:"—" }}</span>
+                  <span class="badge bg-secondary">{{ it.c }}</span>
+                </li>
+              {% empty %}
+                <li class="text-secondary">Нет данных</li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart + Top vets -->
+    <div class="row g-3 mb-4">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="text-muted">Записи по дням</div>
+            </div>
+            <canvas id="appointmentsChart" height="130"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small mb-2">Топ врачей (период)</div>
+            <ol class="mb-0">
+              {% for it in metrics.top_vets %}
+                <li class="d-flex justify-content_between">
+                  <span>{{ it.vet__full_name|default:"—" }}</span>
+                  <span class="badge bg-secondary">{{ it.c }}</span>
+                </li>
+              {% empty %}
+                <li class="text-secondary">Нет данных</li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming + Recent appointments -->
+    <div class="row g-3 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="text-muted">Ближайшие записи (7 дней)</div>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th>Дата/время</th>
+                    <th>Животное</th>
+                    <th>Клиент</th>
+                    <th>Услуга</th>
+                    <th>Врач</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in metrics.upcoming_list %}
+                    <tr>
+                      <td>{{ a.start_at|date:"d.m.Y H:i" }}</td>
+                      <td>{{ a.animal.name|default:"—" }}</td>
+                      <td>{% if a.booker %}{{ a.booker.get_full_name|default:a.booker.username }}{% else %}—{% endif %}</td>
+                      <td>{{ a.event_type.name|default:"—" }}</td>
+                      <td>{{ a.vet.full_name|default:"—" }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="5" class="text-secondary">Нет записей</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="text-muted">Последние записи</div>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle">
+                <thead>
+                  <tr>
+                    <th>Дата/время</th>
+                    <th>Животное</th>
+                    <th>Клиент</th>
+                    <th>Услуга</th>
+                    <th>Врач</th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in metrics.recent_appts %}
+                    <tr>
+                      <td>{{ a.start_at|date:"d.m.Y H:i" }}</td>
+                      <td>{{ a.animal.name|default:"—" }}</td>
+                      <td>{% if a.booker %}{{ a.booker.get_full_name|default:a.booker.username }}{% else %}—{% endif %}</td>
+                      <td>{{ a.event_type.name|default:"—" }}</td>
+                      <td>{{ a.vet.full_name|default:"—" }}</td>
+                      <td>
+                        {% if a.status == "scheduled" %}
+                          <span class="badge bg-info">Запланирована</span>
+                        {% elif a.status == "cancelled" %}
+                          <span class="badge bg-danger">Отменена</span>
+                        {% elif a.status == "completed" %}
+                          <span class="badge bg-success">Завершена</span>
+                        {% elif a.status == "rescheduled" %}
+                          <span class="badge bg-warning text-dark">Перенесена</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ a.status }}</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="6" class="text-secondary">Нет записей</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-7m4c+8SuxG2C0U0GWx/tK9b7f9t9Y2wM1hWm6HjA9jzGQzX0T4s7Fjv8Yl8Wc0Zb" crossorigin="anonymous"></script>
+<script>
+  (function(){
+    const data = {{ metrics.by_day|default:"[]"|safe }};
+    const labels = data.map(d => d.day);
+    const values = data.map(d => d.count);
+
+    const ctx = document.getElementById('appointmentsChart');
+    if (ctx && labels.length) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Записей',
+            data: values,
+            tension: 0.25,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            fill: true,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+          }
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

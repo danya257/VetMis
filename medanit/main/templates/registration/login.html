@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block content %}
+{% comment %}
+  Шаблон использует переменную 'role' из контекста (см. RoleAwareLoginView).
+  Если по каким-то причинам role не передан — берем 'user' по умолчанию.
+{% endcomment %}
+
+{% with role=role|default:"user" %}
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center;">
+  <div class="row justify-content-center w-100">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-lg border-0 rounded-4 animate-slide-in">
+        <div class="card-header bg-primary text-white text-center rounded-top position-relative overflow-hidden">
+          <div class="animated-bg"></div>
+          <h2 class="mb-0 fw-bold position-relative z-1">
+            <i class="bi bi-unlock animate-pulse"></i>
+            <span id="title-user" class="role-title {% if role != 'user' %}d-none{% endif %}">Вход для владельцев питомцев</span>
+            <span id="title-clinic" class="role-title {% if role != 'clinic' %}d-none{% endif %}">Вход для клиник</span>
+          </h2>
+        </div>
+
+        <div class="card-body pb-2">
+          <div class="btn-group w-100 mb-3 role-buttons" role="group" aria-label="Выбор типа входа">
+            <button type="button"
+                    id="btn-user"
+                    class="btn btn-hover {% if role == 'user' %}btn-primary text-white{% else %}btn-outline-primary{% endif %}">
+              <i class="bi bi-people me-1"></i> Владельцы питомцев
+            </button>
+            <button type="button"
+                    id="btn-clinic"
+                    class="btn btn-hover {% if role == 'clinic' %}btn-primary text-white{% else %}btn-outline-primary{% endif %}">
+              <i class="bi bi-hospital me-1"></i> Ветеринарные клиники
+            </button>
+          </div>
+
+          <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" name="login_type" id="login_type" value="{{ role }}"/>
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger mb-3 animate-fade-in">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            {% for field in form %}
+              <div class="mb-3 animate-slide-up">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                  {% if field.name == 'username' and role == 'clinic' %}
+                    Логин (кабинет клиники)
+                  {% else %}
+                    {{ field.label }}
+                  {% endif %}
+                </label>
+                <div class="input-group input-hover">
+                  {% if field.name == 'username' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                  {% elif field.name == 'password' %}
+                    <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                  {% endif %}
+                  {{ field }}
+                </div>
+                {% if field.errors %}
+                  <div class="text-danger small mt-1 animate-fade-in">{{ field.errors|striptags }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-success w-100 mt-2 mb-3 shadow btn-hover-submit">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Войти
+            </button>
+          </form>
+
+          <p class="mt-2 mb-0 text-center small">
+            <span class="role-text {% if role != 'user' %}d-none{% endif %}" id="reg-user">
+              Нет аккаунта?
+              <a href="{% url 'register' %}?role=user" class="link-primary link-hover">Зарегистрироваться</a>
+            </span>
+            <span class="role-text {% if role != 'clinic' %}d-none{% endif %}" id="reg-clinic">
+              Нет аккаунта клиники?
+              <a href="{% url 'register' %}?role=clinic" class="link-primary link-hover">Зарегистрировать клинику</a>
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .animate-slide-in {
+    animation: slideIn 0.8s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .role-title, .role-text {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .d-none {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  .role-title:not(.d-none), .role-text:not(.d-none) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .btn-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-hover:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+
+  .btn-hover-submit {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-hover-submit:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  }
+
+  .input-hover {
+    transition: box-shadow 0.2s ease;
+  }
+  .input-hover:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+  }
+
+  .link-hover {
+    transition: color 0.2s ease;
+  }
+  .link-hover:hover {
+    color: #0056b3 !important;
+  }
+
+  .animated-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+    animation: bgMove 3s infinite ease-in-out;
+  }
+  @keyframes bgMove {
+    0%, 100% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding: 1rem;
+    }
+    .card {
+      margin: 0 1rem;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const btnUser = document.getElementById('btn-user');
+    const btnClinic = document.getElementById('btn-clinic');
+    const hiddenRole = document.getElementById('login_type');
+
+    const titleUser = document.getElementById('title-user');
+    const titleClinic = document.getElementById('title-clinic');
+    const regUser = document.getElementById('reg-user');
+    const regClinic = document.getElementById('reg-clinic');
+
+    function setRole(role) {
+      hiddenRole.value = role;
+
+      // Toggle header titles
+      if (role === 'clinic') {
+        titleUser.classList.add('d-none');
+        titleClinic.classList.remove('d-none');
+        regUser.classList.add('d-none');
+        regClinic.classList.remove('d-none');
+
+        btnUser.classList.remove('btn-primary', 'text-white');
+        btnUser.classList.add('btn-outline-primary');
+
+        btnClinic.classList.remove('btn-outline-primary');
+        btnClinic.classList.add('btn-primary', 'text-white');
+      } else {
+        titleClinic.classList.add('d-none');
+        titleUser.classList.remove('d-none');
+        regClinic.classList.add('d-none');
+        regUser.classList.remove('d-none');
+
+        btnClinic.classList.remove('btn-primary', 'text-white');
+        btnClinic.classList.add('btn-outline-primary');
+
+        btnUser.classList.remove('btn-outline-primary');
+        btnUser.classList.add('btn-primary', 'text-white');
+      }
+    }
+
+    btnUser && btnUser.addEventListener('click', function () { setRole('user'); });
+    btnClinic && btnClinic.addEventListener('click', function () { setRole('clinic'); });
+
+    // Initialize from server-provided value
+    setRole('{{ role|default:"user" }}' === 'clinic' ? 'clinic' : 'user');
+  })();
+</script>
+{% endwith %}
+{% endblock %}
