@@ -3,6 +3,7 @@ from django.db import models
 from ckeditor.fields import RichTextField
 from django.utils import timezone
 from django.utils.text import slugify
+from main.utils.translit import TranslitFileSystemStorage
 
 
 # ===========================
@@ -20,7 +21,13 @@ class Animal(models.Model):
         related_name="animals",
         verbose_name="Владелец"
     )
-    photo = models.ImageField(upload_to="animals/photos/", verbose_name="Фотография", blank=True, null=True)
+    photo = models.ImageField(
+        upload_to="animals/photos/",
+        verbose_name="Фотография",
+        blank=True,
+        null=True,
+        storage=TranslitFileSystemStorage()
+    )
 
     def __str__(self):
         return f"{self.name} ({self.species})"
@@ -386,7 +393,13 @@ class BlogArticle(models.Model):
     category = models.ForeignKey(BlogCategory, on_delete=models.PROTECT, related_name="articles", verbose_name="Категория")
     title = models.CharField("Заголовок", max_length=200)
     slug = models.SlugField("Слаг (URL)", unique=True)
-    preview = models.ImageField("Превью-изображение", upload_to="blog/previews/", blank=True, null=True)
+    preview = models.ImageField(
+        "Превью-изображение",
+        upload_to="blog/previews/",
+        blank=True,
+        null=True,
+        storage=TranslitFileSystemStorage()
+    )
     content = RichTextField("Текст статьи")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Автор")
     created_at = models.DateTimeField("Создано", auto_now_add=True)
